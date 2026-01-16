@@ -45,6 +45,7 @@ public class BaseCartService implements CartService {
 
     // 장바구니 상품 데이터 삭제(특정 회원의 특정 상품)
     @Override
+    @Transactional
     public void remove(Integer memberId, Integer itemId) {
         cartRepository.deleteByMemberIdAndItemId(memberId, itemId);
     }

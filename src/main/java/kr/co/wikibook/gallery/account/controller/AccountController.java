@@ -4,12 +4,19 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import kr.co.wikibook.gallery.account.dto.AccountJoinRequest;
 import kr.co.wikibook.gallery.account.dto.AccountLoginRequest;
+import kr.co.wikibook.gallery.account.etc.AccountConstants;
 import kr.co.wikibook.gallery.account.helper.AccountHelper;
+import kr.co.wikibook.gallery.block.service.BlockService;
+import kr.co.wikibook.gallery.common.util.HttpUtils;
+import kr.co.wikibook.gallery.common.util.TokenUtils;
+import kr.co.wikibook.gallery.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,6 +24,8 @@ import org.springframework.web.bind.annotation.*;
 public class AccountController {
 
     private final AccountHelper accountHelper;
+    private final BlockService blockService;
+    private final MemberService memberService;
 
     @PostMapping("/api/account/join")
     public ResponseEntity<?> join(@RequestBody AccountJoinRequest joinReq) {
@@ -26,6 +35,11 @@ public class AccountController {
             !StringUtils.hasLength(joinReq.getLoginPw())) {
 
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        // 중복 로그인 아이디가 있으면
+        if (memberService.find(joinReq.getLoginId()) != null) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
         }
 
         accountHelper.join(joinReq);
@@ -59,5 +73,25 @@ public class AccountController {
     public ResponseEntity<?> logout(HttpServletRequest req, HttpServletResponse res) {
         accountHelper.logout(req, res);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @GetMapping("/api/account/token")
+    public ResponseEntity<?> regenerate(HttpServletRequest req) {
+        String accessToken = "";
+        String refreshToken = HttpUtils.getCookieValue(req, AccountConstants.REFRESH_TOKEN_NAME);
+
+        // 리프레시 토큰이 유효혀다면
+        if (StringUtils.hasLength(refreshToken) && TokenUtils.isValid(refreshToken) && !blockService.has(refreshToken)) {
+            // 리프레시 토큰의 내부 값 조회
+            Map<String, Object> tokenBody = TokenUtils.getBody(refreshToken);
+
+            // 리프레시 토큰의 회원 아이디 조회
+            Integer memberId = (Integer) tokenBody.get(AccountConstants.MEMBER_ID_NAME);
+
+            // 엑세스 토큰 발급
+            accessToken = TokenUtils.generate(AccountConstants.ACCESS_TOKEN_NAME, AccountConstants.MEMBER_ID_NAME, memberId, AccountConstants.ACCESS_TOKEN_EXP_MINUTES);
+        }
+
+        return new ResponseEntity<>(accessToken, HttpStatus.OK);
     }
 }

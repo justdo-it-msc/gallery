@@ -11,7 +11,7 @@ import java.util.List;
 public interface OrderService {
 
     // 주문 목록 조회
-    List<OrderRead> findAll(Integer memberId);
+    Page<OrderRead> findAll(Integer memberId, Pageable pageable);
 
     // 주문 상세 조회
     OrderRead find(Integer id, Integer memberId);
