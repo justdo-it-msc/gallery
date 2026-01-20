@@ -15,7 +15,7 @@ const props = defineProps({
   },
 });
 
-// 삼품 할인가
+// 상품 할인가
 const computedItemDiscountPrice = computed(() => {
   return (
     props.item.price -
