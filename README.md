@@ -1,3 +1,7 @@
+## 튜토리얼 출처
+
+https://product.kyobobook.co.kr/detail/S000215152090
+
 ## 갤러리 쇼핑몰 제작을 위한 개발 환경 구축
 
 ### 백엔드
